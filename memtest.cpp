@@ -158,26 +158,6 @@ static void moving_inversion_rand(memtest_t *memp) {
   memtest_sequential<T>(memp, generator, memp->rand_seed);
 }
 
-///**
-// *
-// */
-//static void walking_one_wrapper(memtest_t *memp) {
-//  switch(memp->width){
-//  case MEMTEST_WIDTH_32:
-//    walking_one<uint32_t>(memp);
-//    walking_one<uint16_t>(memp);
-//    walking_one<uint8_t>(memp);
-//    break;
-//  case MEMTEST_WIDTH_16:
-//    walking_one<uint16_t>(memp);
-//    walking_one<uint8_t>(memp);
-//    break;
-//  case MEMTEST_WIDTH_8:
-//    walking_one<uint8_t>(memp);
-//    break;
-//  }
-//}
-
 /**
  *
  */
@@ -200,86 +180,6 @@ static void memtest_wrapper(memtest_t *memp,
     break;
   }
 }
-
-///**
-// *
-// */
-//static void walking_zero_wrapper(memtest_t *memp) {
-//  switch(memp->width){
-//  case MEMTEST_WIDTH_32:
-//    walking_zero<uint32_t>(memp);
-//    walking_zero<uint16_t>(memp);
-//    walking_zero<uint8_t>(memp);
-//    break;
-//  case MEMTEST_WIDTH_16:
-//    walking_zero<uint16_t>(memp);
-//    walking_zero<uint8_t>(memp);
-//    break;
-//  case MEMTEST_WIDTH_8:
-//    walking_zero<uint8_t>(memp);
-//    break;
-//  }
-//}
-//
-///**
-// *
-// */
-//static void moving_inversion_wrapper(memtest_t *memp) {
-//  switch(memp->width){
-//  case MEMTEST_WIDTH_32:
-//    moving_inversion<uint32_t>(memp);
-//    moving_inversion<uint16_t>(memp);
-//    moving_inversion<uint8_t>(memp);
-//    break;
-//  case MEMTEST_WIDTH_16:
-//    moving_inversion<uint16_t>(memp);
-//    moving_inversion<uint8_t>(memp);
-//    break;
-//  case MEMTEST_WIDTH_8:
-//    moving_inversion<uint8_t>(memp);
-//    break;
-//  }
-//}
-//
-///**
-// *
-// */
-//static void moving_inversion_rand_wrapper(memtest_t *memp) {
-//  switch(memp->width){
-//  case MEMTEST_WIDTH_32:
-//    moving_inversion_rand<uint32_t>(memp);
-//    moving_inversion_rand<uint16_t>(memp);
-//    moving_inversion_rand<uint8_t>(memp);
-//    break;
-//  case MEMTEST_WIDTH_16:
-//    moving_inversion_rand<uint16_t>(memp);
-//    moving_inversion_rand<uint8_t>(memp);
-//    break;
-//  case MEMTEST_WIDTH_8:
-//    moving_inversion_rand<uint8_t>(memp);
-//    break;
-//  }
-//}
-//
-///**
-// *
-// */
-//static void own_address_wrapper(memtest_t *memp) {
-//  switch(memp->width){
-//  case MEMTEST_WIDTH_32:
-//    own_address<uint32_t>(memp);
-//    own_address<uint16_t>(memp);
-//    own_address<uint8_t>(memp);
-//    break;
-//  case MEMTEST_WIDTH_16:
-//    own_address<uint16_t>(memp);
-//    own_address<uint8_t>(memp);
-//    break;
-//  case MEMTEST_WIDTH_8:
-//    own_address<uint8_t>(memp);
-//    break;
-//  }
-//}
 
 /**
  *
