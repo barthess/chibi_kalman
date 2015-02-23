@@ -5,17 +5,17 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -O0 -ggdb -fomit-frame-pointer -falign-functions=16
+  USE_OPT = -O2 -ggdb -fomit-frame-pointer -falign-functions=16
 endif
 
 # C specific options here (added to USE_OPT).
 ifeq ($(USE_COPT),)
-  USE_COPT = 
+  USE_COPT = -std=gnu11 
 endif
 
 # C++ specific options here (added to USE_OPT).
 ifeq ($(USE_CPPOPT),)
-  USE_CPPOPT = -fno-rtti
+  USE_CPPOPT = -fno-rtti -fno-exceptions -std=gnu++11
 endif
 
 # Enable this if you want the linker to remove unused code and data
@@ -65,7 +65,7 @@ endif
 
 # Enables the use of FPU on Cortex-M4 (no, softfp, hard).
 ifeq ($(USE_FPU),)
-  USE_FPU = no
+  USE_FPU = softfp
 endif
 
 #
@@ -81,12 +81,13 @@ PROJECT = ch
 
 # Imported source files and paths
 CHIBIOS = ../chibios-svn
-include $(CHIBIOS)/os/hal/hal.mk
-include $(CHIBIOS)/os/hal/ports/STM32/STM32F4xx/platform.mk
+include $(CHIBIOS)/community/os/hal/hal.mk
+include $(CHIBIOS)/community/os/hal/ports/STM32/STM32F4xx/platform.mk
 include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_stm32f4xx.mk
-include $(CHIBIOS)/test/rt/test.mk
+include $(CHIBIOS)/os/various/cpp_wrappers/chcpp.mk
+include $(CHIBIOS)/os/various/fatfs_bindings/fatfs.mk
 
 
 # Define linker script file here
@@ -98,15 +99,20 @@ CSRC = $(PORTSRC) \
        $(KERNSRC) \
        $(TESTSRC) \
        $(HALSRC) \
-       $(BOARDSRC) \
+       $(OSALSRC) \
        $(PLATFORMSRC) \
-       $(CHIBIOS)/os/various/chprintf.c \
-       main.c \
-       board.c
+       $(BOARDSRC) \
+       $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
+       board.c \
+       usbcfg.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC =
+CPPSRC = debouncer.cpp \
+         ui.cpp \
+         pwm_gpt.cpp \
+         main.cpp \
+		 memtest.cpp
 
 # C sources to be compiled in ARM mode regardless of the global setting.
 # NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler
@@ -133,7 +139,8 @@ ASMSRC = $(PORTASM)
 
 INCDIR = $(PORTINC) $(KERNINC) $(TESTINC) \
          $(HALINC) $(OSALINC) $(PLATFORMINC) \
-         $(CHIBIOS)/os/various
+         $(CHIBIOS)/os/hal/lib/streams \
+         $(CHIBIOS)/os/various/cpp_wrappers \
 
 
 #
@@ -145,11 +152,17 @@ INCDIR = $(PORTINC) $(KERNINC) $(TESTINC) \
 #
 
 MCU  = cortex-m4
-
+ 
 #TRGT = arm-elf-
 TRGT = arm-none-eabi-
-CC   = ccache $(TRGT)gcc
-CPPC = ccache $(TRGT)g++
+ifeq ($(OS),Windows_NT) # workaround for crappy OS
+	CC   = $(TRGT)gcc
+	CPPC = $(TRGT)g++
+else
+	CC   = ccache $(TRGT)gcc
+	CPPC = ccache $(TRGT)g++
+endif
+
 # Enable loading with g++ only if you need C++ runtime support.
 # NOTE: You can use C++ even without C++ support if you are careful. C++
 #       runtime support makes code size explode.
@@ -169,11 +182,14 @@ AOPT =
 # THUMB-specific options here
 TOPT = -mthumb -DTHUMB
 
+# Common warning flags
+WARN = -Wall -Wextra -Wdouble-promotion -Wformat #-Wconversion -Werror
+
 # Define C warning options here
-CWARN = -Wall -Wextra -Wstrict-prototypes
+CWARN = $(WARN) -Wstrict-prototypes
 
 # Define C++ warning options here
-CPPWARN = -Wall -Wextra
+CPPWARN = $(WARN)
 
 #
 # Compiler settings
