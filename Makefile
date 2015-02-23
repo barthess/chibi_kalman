@@ -87,7 +87,6 @@ include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_stm32f4xx.mk
 include $(CHIBIOS)/os/various/cpp_wrappers/chcpp.mk
-include $(CHIBIOS)/os/various/fatfs_bindings/fatfs.mk
 
 
 # Define linker script file here
@@ -112,7 +111,7 @@ CPPSRC = debouncer.cpp \
          ui.cpp \
          pwm_gpt.cpp \
          main.cpp \
-		 memtest.cpp
+         memtest.cpp
 
 # C sources to be compiled in ARM mode regardless of the global setting.
 # NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler
