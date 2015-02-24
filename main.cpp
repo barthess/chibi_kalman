@@ -53,18 +53,11 @@ static void mem_error_cb(memtest_t *memp, testtype_t e, size_t address);
 
 static const size_t sram_size = 64 * 1024;
 static uint8_t test_buf[sram_size];
-
-/* this config successfully works with . */
-//static const SRAMConfig sram_cfg = {
-//    (2 << 8)
-//};
+static double test_buf_mtrx[33*33];
 
 static const SRAMConfig sram_cfg = {
-    (4 << 8)
+    (3 << 8) | (1 << 0)
 };
-
-static time_measurement_t tmu_memtest_16;
-static time_measurement_t tmu_memtest_8;
 
 static memtest_t memtest_struct = {
     (void *)FSMC_Bank1_1_MAP,
@@ -73,6 +66,8 @@ static memtest_t memtest_struct = {
     mem_error_cb,
     42
 };
+
+time_measurement_t mem_tmu;
 
 /*
  ******************************************************************************
@@ -89,28 +84,45 @@ static void mem_error_cb(memtest_t *memp, testtype_t e, size_t address) {
 
   green_led_off();
   red_led_on();
-  osalSysHalt("");
+  osalSysHalt("Memory broken");
 }
 
-/**
+/*
  *
  */
 static void memtest(void) {
-  chTMObjectInit(&tmu_memtest_16);
-  chTMObjectInit(&tmu_memtest_8);
+
+  red_led_off();
+
+  while (true) {
+    memtest_struct.rand_seed = chSysGetRealtimeCounterX();
+    memtest_run(&memtest_struct, MEMTEST_RUN_ALL);
+    //memtest_run(&memtest_struct, MEMTEST_MOVING_INVERSION_RAND);
+    green_led_toggle();
+  }
 
   green_led_on();
-  while (true) {
-    memtest_struct.width = MEMTEST_WIDTH_16;
-    chTMStartMeasurementX(&tmu_memtest_16);
-    memtest_run(&memtest_struct, MEMTEST_WALKING_ONE);
-    chTMStopMeasurementX(&tmu_memtest_16);
+  green_led_off();
+}
 
-    memtest_struct.width = MEMTEST_WIDTH_8;
-    chTMStartMeasurementX(&tmu_memtest_8);
-    memtest_run(&memtest_struct, MEMTEST_WALKING_ONE);
-    chTMStopMeasurementX(&tmu_memtest_8);
+/*
+ *
+ */
+static void membench(void) {
+
+  chTMObjectInit(&mem_tmu);
+
+  double pattern = 1.1;
+  for (size_t i=0; i<33*33; i++) {
+    test_buf_mtrx[i] = pattern;
+    pattern += pattern;
   }
+
+  green_led_on();
+  chTMStartMeasurementX(&mem_tmu);
+  for (size_t i=0; i<1000; i++)
+    memcpy(memtest_struct.start, test_buf_mtrx, sizeof(test_buf_mtrx));
+  chTMStopMeasurementX(&mem_tmu);
   green_led_off();
 }
 
@@ -142,6 +154,7 @@ int main(void) {
   fsmcSramInit();
   fsmcSramStart(&SRAMD1, &sram_cfg);
 
+  membench();
   memtest();
 
   /*

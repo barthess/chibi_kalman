@@ -107,7 +107,8 @@ CSRC = $(PORTSRC) \
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC = debouncer.cpp \
+CPPSRC = $(CHCPPSRC) \
+         debouncer.cpp \
          ui.cpp \
          pwm_gpt.cpp \
          main.cpp \
