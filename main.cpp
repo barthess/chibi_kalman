@@ -52,7 +52,6 @@ static void mem_error_cb(memtest_t *memp, testtype_t e, size_t address);
  */
 
 static const size_t sram_size = 64 * 1024;
-static uint8_t test_buf[sram_size];
 static double test_buf_mtrx[33*33];
 
 static const SRAMConfig sram_cfg = {
@@ -149,7 +148,7 @@ int main(void) {
 
   osalThreadSleepMilliseconds(500);
 
-  //uiInit();
+  uiInit();
 
   fsmcSramInit();
   fsmcSramStart(&SRAMD1, &sram_cfg);

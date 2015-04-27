@@ -108,7 +108,6 @@ static THD_FUNCTION(RedBlinkThread, arg) {
   }
 
   chThdExit(MSG_OK);
-  return MSG_OK;
 }
 
 /*
