@@ -16,12 +16,12 @@
                                            MEMTEST_MOVING_INVERSION_RAND)
 
 typedef struct memtest_t memtest_t;
-typedef uint32_t testtype_t;
+typedef uint32_t testtype;
 
 /*
  * Error call back.
  */
-typedef void (*memtestecb_t)(memtest_t *memp, testtype_t e, size_t address);
+typedef void (*memtestecb_t)(memtest_t *testp, testtype type, size_t address);
 
 /*
  *
@@ -49,7 +49,7 @@ struct memtest_t {
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void memtest_run(memtest_t *memp, uint32_t testmask);
+  void memtest_run(memtest_t *testp, uint32_t testmask);
 #ifdef __cplusplus
 }
 #endif

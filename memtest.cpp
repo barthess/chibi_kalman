@@ -12,6 +12,7 @@ class Generator {
 public:
   Generator(void) : pattern(0) {;}
   virtual T get(void) = 0;
+  virtual testtype get_type(void) = 0;
   virtual void init(T seed) {
     pattern = seed;
   }
@@ -33,6 +34,10 @@ class GeneratorWalkingOne : public Generator<T> {
 
     return ret;
   }
+
+  testtype get_type(void) {
+    return MEMTEST_WALKING_ONE;
+  }
 };
 
 /*
@@ -49,6 +54,10 @@ class GeneratorWalkingZero : public Generator<T> {
 
     return ret;
   }
+
+  testtype get_type(void) {
+    return MEMTEST_WALKING_ZERO;
+  }
 };
 
 /*
@@ -61,6 +70,10 @@ class GeneratorOwnAddress : public Generator<T> {
     this->pattern++;
     return ret;
   }
+
+  testtype get_type(void) {
+    return MEMTEST_OWN_ADDRESS;
+  }
 };
 
 /*
@@ -72,6 +85,13 @@ class GeneratorMovingInv : public Generator<T> {
     T ret = this->pattern;
     this->pattern = ~this->pattern;
     return ret;
+  }
+
+  testtype get_type(void) {
+    if ((this->pattern == 0) || ((this->pattern & 0xFF) == 0xFF))
+      return MEMTEST_MOVING_INVERSION_ZERO;
+    else
+      return MEMTEST_MOVING_INVERSION_55AA;
   }
 };
 
@@ -103,6 +123,10 @@ public:
     return ret;
   }
 
+  testtype get_type(void) {
+    return MEMTEST_MOVING_INVERSION_RAND;
+  }
+
 private:
   size_t step;
   T prev;
@@ -112,10 +136,10 @@ private:
  *
  */
 template <typename T>
-static void memtest_sequential(memtest_t *memp, Generator<T> &generator, T seed) {
-  const size_t steps = memp->size / sizeof(T);
+static void memtest_sequential(memtest_t *testp, Generator<T> &generator, T seed) {
+  const size_t steps = testp->size / sizeof(T);
   size_t i;
-  T *mem = static_cast<T *>(memp->start);
+  T *mem = static_cast<T *>(testp->start);
 
   /* fill ram */
   generator.init(seed);
@@ -126,72 +150,72 @@ static void memtest_sequential(memtest_t *memp, Generator<T> &generator, T seed)
   generator.init(seed);
   for (i=0; i<steps; i++) {
     if (mem[i] != generator.get()) {
-      memp->ecb(memp, MEMTEST_WALKING_ONE, i*sizeof(T));
+      testp->ecb(testp, generator.get_type(), i*sizeof(T));
       return;
     }
   }
 }
 
 template <typename T>
-static void walking_one(memtest_t *memp) {
+static void walking_one(memtest_t *testp) {
   GeneratorWalkingOne<T> generator;
-  memtest_sequential<T>(memp, generator, 1);
+  memtest_sequential<T>(testp, generator, 1);
 }
 
 template <typename T>
-static void walking_zero(memtest_t *memp) {
+static void walking_zero(memtest_t *testp) {
   GeneratorWalkingZero<T> generator;
-  memtest_sequential<T>(memp, generator, 1);
+  memtest_sequential<T>(testp, generator, 1);
 }
 
 template <typename T>
-static void own_address(memtest_t *memp) {
+static void own_address(memtest_t *testp) {
   GeneratorOwnAddress<T> generator;
-  memtest_sequential<T>(memp, generator, 0);
+  memtest_sequential<T>(testp, generator, 0);
 }
 
 template <typename T>
-static void moving_inversion_zero(memtest_t *memp) {
+static void moving_inversion_zero(memtest_t *testp) {
   GeneratorMovingInv<T> generator;
   T mask = -1;
-  memtest_sequential<T>(memp, generator, 0);
-  memtest_sequential<T>(memp, generator, 0xFFFFFFFF & mask);
+  memtest_sequential<T>(testp, generator, 0);
+  memtest_sequential<T>(testp, generator, 0xFFFFFFFF & mask);
 }
 
 template <typename T>
-static void moving_inversion_55aa(memtest_t *memp) {
+static void moving_inversion_55aa(memtest_t *testp) {
   GeneratorMovingInv<T> generator;
   T mask = -1;
-  memtest_sequential<T>(memp, generator, 0x55555555 & mask);
-  memtest_sequential<T>(memp, generator, 0xAAAAAAAA & mask);
+  memtest_sequential<T>(testp, generator, 0x55555555 & mask);
+  memtest_sequential<T>(testp, generator, 0xAAAAAAAA & mask);
 }
 
 template <typename T>
-static void moving_inversion_rand(memtest_t *memp) {
+static void moving_inversion_rand(memtest_t *testp) {
   GeneratorMovingInvRand<T> generator;
   T mask = -1;
-  memtest_sequential<T>(memp, generator, memp->rand_seed & mask);
+  memtest_sequential<T>(testp, generator, testp->rand_seed & mask);
 }
 
 /*
  *
  */
-static void memtest_wrapper(memtest_t *memp,
-                            void (*p_u8)(memtest_t *memp),
-                            void (*p_u16)(memtest_t *memp),
-                            void (*p_u32)(memtest_t *memp)) {
-  switch(memp->width){
+static void memtest_wrapper(memtest_t *testp,
+                            void (*p_u8)(memtest_t *testp),
+                            void (*p_u16)(memtest_t *testp),
+                            void (*p_u32)(memtest_t *testp)) {
+  switch(testp->width){
   case MEMTEST_WIDTH_32:
-    p_u8(memp);
-    p_u16(memp);
-    p_u32(memp);
+    p_u8(testp);
+    p_u16(testp);
+    p_u32(testp);
     break;
   case MEMTEST_WIDTH_16:
-    //p_u8(memp);
-    p_u16(memp);
+    //p_u8(testp);
+    p_u16(testp);
     break;
   case MEMTEST_WIDTH_8:
-    p_u8(memp);
+    p_u8(testp);
     break;
   }
 }
@@ -199,45 +223,45 @@ static void memtest_wrapper(memtest_t *memp,
 /*
  *
  */
-void memtest_run(memtest_t *memp, uint32_t testmask) {
+void memtest_run(memtest_t *testp, uint32_t testmask) {
 
-  if ((testmask & MEMTEST_WALKING_ONE) == MEMTEST_WALKING_ONE) {
-    memtest_wrapper(memp,
+  if (testmask & MEMTEST_WALKING_ONE) {
+    memtest_wrapper(testp,
         walking_one<uint8_t>,
         walking_one<uint16_t>,
         walking_one<uint32_t>);
   }
 
-  if ((testmask & MEMTEST_WALKING_ZERO) == MEMTEST_WALKING_ZERO) {
-    memtest_wrapper(memp,
+  if (testmask & MEMTEST_WALKING_ZERO) {
+    memtest_wrapper(testp,
         walking_zero<uint8_t>,
         walking_zero<uint16_t>,
         walking_zero<uint32_t>);
   }
 
-  if ((testmask & MEMTEST_OWN_ADDRESS) == MEMTEST_OWN_ADDRESS) {
-    memtest_wrapper(memp,
+  if (testmask & MEMTEST_OWN_ADDRESS) {
+    memtest_wrapper(testp,
         own_address<uint8_t>,
         own_address<uint16_t>,
         own_address<uint32_t>);
   }
 
-  if ((testmask & MEMTEST_MOVING_INVERSION_ZERO) == MEMTEST_MOVING_INVERSION_ZERO) {
-    memtest_wrapper(memp,
+  if (testmask & MEMTEST_MOVING_INVERSION_ZERO) {
+    memtest_wrapper(testp,
         moving_inversion_zero<uint8_t>,
         moving_inversion_zero<uint16_t>,
         moving_inversion_zero<uint32_t>);
   }
 
-  if ((testmask & MEMTEST_MOVING_INVERSION_55AA) == MEMTEST_MOVING_INVERSION_55AA) {
-    memtest_wrapper(memp,
+  if (testmask & MEMTEST_MOVING_INVERSION_55AA) {
+    memtest_wrapper(testp,
         moving_inversion_55aa<uint8_t>,
         moving_inversion_55aa<uint16_t>,
         moving_inversion_55aa<uint32_t>);
   }
 
-  if ((testmask & MEMTEST_MOVING_INVERSION_RAND) == MEMTEST_MOVING_INVERSION_RAND) {
-    memtest_wrapper(memp,
+  if (testmask & MEMTEST_MOVING_INVERSION_RAND) {
+    memtest_wrapper(testp,
         moving_inversion_rand<uint8_t>,
         moving_inversion_rand<uint16_t>,
         moving_inversion_rand<uint32_t>);

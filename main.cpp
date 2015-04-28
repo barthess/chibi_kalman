@@ -43,7 +43,7 @@
  * PROTOTYPES
  ******************************************************************************
  */
-static void mem_error_cb(memtest_t *memp, testtype_t e, size_t address);
+static void mem_error_cb(memtest_t *memp, testtype type, size_t address);
 
 /*
  ******************************************************************************
@@ -76,9 +76,9 @@ time_measurement_t mem_tmu;
  ******************************************************************************
  */
 
-static void mem_error_cb(memtest_t *memp, testtype_t e, size_t address) {
+static void mem_error_cb(memtest_t *memp, testtype type, size_t address) {
   (void)memp;
-  (void)e;
+  (void)type;
   (void)address;
 
   green_led_off();
@@ -148,7 +148,7 @@ int main(void) {
 
   osalThreadSleepMilliseconds(500);
 
-  uiInit();
+  //uiInit();
 
   fsmcSramInit();
   fsmcSramStart(&SRAMD1, &sram_cfg);
